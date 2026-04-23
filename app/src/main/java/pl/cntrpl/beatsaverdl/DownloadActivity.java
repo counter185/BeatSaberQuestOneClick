@@ -6,11 +6,15 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Looper;
 import android.provider.Settings;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
@@ -36,6 +40,10 @@ public class DownloadActivity extends Activity {
 
     public static String tempDownloadsDir = null;
 
+    private TextView detailsText = null;
+    private TextView artistText, nameText, levelAuthorText = null;
+    private ImageView coverImg = null;
+
     class DownloadAndInstallTask extends Thread {
         private Uri uri;
         private Activity context;
@@ -47,19 +55,31 @@ public class DownloadActivity extends Activity {
 
         @Override
         public void run() {
+            boolean result = false;
             Looper.prepare();
             BSURIHandler uriHandler = BSURIHandler.getUriHandlerForUri(uri);
             if (uriHandler != null) {
                 try {
+                    setProgressTextFromThread("Fetching " + uri.toString());
                     ZipFile zip = uriHandler.download();
                     if (zip != null) {
-                        processZip(context, zip);
+                        setProgressTextFromThread("Extracting...");
+                        result = processZip(context, zip);
                         zip.close();
                     }
                 } catch (IOException e) {
+                    setProgressTextFromThread("Error: \n" + e.getMessage());
                     e.printStackTrace();
                 }
+            } else {
+                setProgressTextFromThread("Couldn't find handler for uri: " + uri.toString());
             }
+            if (result) {
+                setProgressTextFromThread("Download complete");
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ignored) {}
             context.finish();
             Looper.loop();
             Looper.myLooper().quitSafely();
@@ -71,6 +91,13 @@ public class DownloadActivity extends Activity {
         super.onCreate(savedInstanceState);
         // Set the content view for the download activity
         setContentView(R.layout.activity_download);
+
+        detailsText = findViewById(R.id.text_details);
+        artistText = findViewById(R.id.text_artist);
+        nameText = findViewById(R.id.text_name);
+        levelAuthorText = findViewById(R.id.text_levelauthor);
+        coverImg = findViewById(R.id.img_cover);
+
         createNotifChannel();
 
         tempDownloadsDir = getExternalCacheDir().getAbsolutePath();
@@ -79,8 +106,10 @@ public class DownloadActivity extends Activity {
             Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
             intent.setData(Uri.parse("package:" + getPackageName()));
             startActivity(intent);
+            postNotification(3, this, "BeatSaberDL", "Allow the app to manage your files, then start the download again.");
         } else {
 
+            detailsText.setText("Download started");
             Intent intent = getIntent();
             if (Intent.ACTION_VIEW.equals(intent.getAction())) {
                 Uri uri = intent.getData();
@@ -89,6 +118,20 @@ public class DownloadActivity extends Activity {
                 new DownloadAndInstallTask(this, uri).start();
             }
         }
+    }
+
+    void setProgressTextFromThread(String text) {
+        detailsText.post(() -> detailsText.setText(text));
+    }
+    void setMetadataTextFromThread(Bitmap coverArt, String artist, String name, String levelAuthor) {
+        nameText.post(() -> {
+            if (coverArt != null) {
+                coverImg.setImageBitmap(coverArt);
+            }
+            nameText.setText(name);
+            artistText.setText(artist);
+            levelAuthorText.setText(levelAuthor);
+        });
     }
 
     public void createNotifChannel() {
@@ -123,15 +166,34 @@ public class DownloadActivity extends Activity {
                 String filename = f.getName();
                 String subDirName = f.getName().substring(0, f.getName().lastIndexOf('.'));
 
+                String songAuthor = "---";
+                String songName = "---";
+                String levelAuthor = "---";
+
                 JSONObject infoDat = BSZipUtil.getInfoDat(zip);
                 if (infoDat != null) {
                     try {
+                        songAuthor = infoDat.getString("_songAuthorName");
+                        songName = infoDat.getString("_songName");
+                        levelAuthor = infoDat.getString("_levelAuthorName");
+                        Bitmap coverArt = null;
+                        try {
+                            String coverArtFile = infoDat.getString("_coverImageFilename");
+                            ZipEntry coverArtEntry = zip.getEntry(coverArtFile);
+                            InputStream s = zip.getInputStream(coverArtEntry);
+                            coverArt = BitmapFactory.decodeStream(s);
+                            s.close();
+                        } catch (Exception ignored) {}
+                        ((DownloadActivity)caller).setMetadataTextFromThread(coverArt, songAuthor, songName, levelAuthor);
                         subDirName = "bsdl-"
                                 + subDirName.substring(0,6) + " "
-                                + infoDat.getString("_songAuthorName") + " - "
-                                + infoDat.getString("_songName")
-                                + " ["+infoDat.getString("_levelAuthorName")+"]";
-                    } catch (Exception e) { e.printStackTrace(); }
+                                + songAuthor + " - "
+                                + songName
+                                + " ["+levelAuthor+"]";
+                    } catch (Exception e) {
+                        ((DownloadActivity)caller).setProgressTextFromThread("Error extracting zip: \n" + e.getMessage());
+                        e.printStackTrace();
+                    }
                 }
 
                 subDirName = subDirName.replaceAll("[\\\\/:*?\"<>|]", "_"); //sanitize folder name
