@@ -9,10 +9,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.net.nsd.NsdManager;
+import android.net.nsd.NsdServiceInfo;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Looper;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -36,7 +40,7 @@ import pl.cntrpl.beatsaverdl.utils.HTTPUtil;
 
 public class DownloadActivity extends Activity {
 
-    static final String customLevelPath = "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels/";
+    public static final String customLevelPath = "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels/";
 
     public static String tempDownloadsDir = null;
 
