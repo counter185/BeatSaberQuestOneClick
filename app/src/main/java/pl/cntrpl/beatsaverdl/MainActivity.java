@@ -1,8 +1,10 @@
 package pl.cntrpl.beatsaverdl;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,6 +23,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.compose.runtime.internal.ThreadMap;
 
@@ -37,6 +40,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -82,6 +86,9 @@ public class MainActivity extends Activity {
                                 TextView textArtistName = elementRoot.findViewById(R.id.text_artistname);
                                 TextView textLevelAuthors = elementRoot.findViewById(R.id.text_levelauthor);
                                 Button b = elementRoot.findViewById(R.id.btn_delete);
+                                b.setOnClickListener((a) -> {
+                                    caller.promptDelete(songName, p, elementRoot);
+                                });
 
                                 textArtistName.setText(songAuthor + " " + songName, TextView.BufferType.SPANNABLE);
                                 Spannable s = (Spannable)textArtistName.getText();
@@ -114,6 +121,33 @@ public class MainActivity extends Activity {
     final String PREF_OPEN_TO_LAN = "bsdl.open_lan";
     ThreadMapList mapListThread = null;
 
+
+    public void promptDelete(String displayName, Path directory, View ui) {
+        Context ctx = this;
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        try (Stream<Path> paths = Files.walk(directory)) {
+                            paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+                            mapListPanel.removeView(ui);
+                        } catch (Exception e) {
+                            Toast.makeText(ctx, "Delete failed", Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        //No button clicked
+                        break;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Delete: " + displayName + "?").setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener).show();
+    }
 
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {

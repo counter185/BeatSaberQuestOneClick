@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Spannable;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -97,7 +99,6 @@ public class DownloadActivity extends Activity {
         setContentView(R.layout.activity_download);
 
         detailsText = findViewById(R.id.text_details);
-        artistText = findViewById(R.id.text_artist);
         nameText = findViewById(R.id.text_name);
         levelAuthorText = findViewById(R.id.text_levelauthor);
         coverImg = findViewById(R.id.img_cover);
@@ -132,8 +133,9 @@ public class DownloadActivity extends Activity {
             if (coverArt != null) {
                 coverImg.setImageBitmap(coverArt);
             }
-            nameText.setText(name);
-            artistText.setText(artist);
+            nameText.setText(artist + " " + name, TextView.BufferType.SPANNABLE);
+            Spannable s = (Spannable)nameText.getText();
+            s.setSpan(new ForegroundColorSpan(0xA0FFFFFF), 0, artist.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             levelAuthorText.setText(levelAuthor);
         });
     }
