@@ -157,7 +157,7 @@ public class DownloadActivity extends Activity {
         Notification.Builder builder = new Notification.Builder(caller, "bsdl_channel")
                 .setContentTitle(title)
                 .setContentText(message)
-                .setSmallIcon(R.mipmap.ic_launcher_round)   //doesn't matter because the quest doesn't show the icon anyway
+                .setSmallIcon(R.drawable.ic_launcher_foreground)   //doesn't matter because the quest doesn't show the icon anyway
                 .setAutoCancel(true);
         NotificationManager notificationManager = (NotificationManager)caller.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
