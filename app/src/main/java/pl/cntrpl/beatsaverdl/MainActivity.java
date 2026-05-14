@@ -1,5 +1,7 @@
 package pl.cntrpl.beatsaverdl;
 
+import static android.view.View.INVISIBLE;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
@@ -158,6 +160,8 @@ public class MainActivity extends Activity {
 
         openLanCheckbox = findViewById(R.id.chkbox_openlan);
         openLanCheckbox.setChecked(prefs.getBoolean(PREF_OPEN_TO_LAN, false));
+        //until this feature gets implemented
+        openLanCheckbox.setVisibility(INVISIBLE);
 
         openLanCheckbox.setOnCheckedChangeListener((a,b) -> {
             SharedPreferences.Editor editor = prefs.edit();

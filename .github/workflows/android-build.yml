@@ -5,6 +5,16 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_call:
+    secrets:
+      KEYSTORE:
+        required: true
+      SIGNING_KEY_ALIAS:
+        required: true
+      SIGNING_KEY_PASSWORD:
+        required: true
+      SIGNING_STORE_PASSWORD:
+        required: true
 
 jobs:
   build-android:

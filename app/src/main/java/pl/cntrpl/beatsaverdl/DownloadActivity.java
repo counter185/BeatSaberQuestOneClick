@@ -92,6 +92,7 @@ public class DownloadActivity extends Activity {
 
         }
     }
+
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,6 +113,7 @@ public class DownloadActivity extends Activity {
             intent.setData(Uri.parse("package:" + getPackageName()));
             startActivity(intent);
             postNotification(3, this, "BeatSaberDL", "Allow the app to manage your files, then start the download again.");
+            finish();
         } else {
 
             detailsText.setText("Download started");
