@@ -7,12 +7,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-android-onearch:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     
+    - name: Decode Keystore
+      env:
+        ENCODED_STRING: ${{ secrets.KEYSTORE }}
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        mkdir app/keystore
+        echo $ENCODED_STRING | base64 -di > app/keystore/keystore.jks
+
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
@@ -25,6 +33,10 @@ jobs:
         log-accepted-android-sdk-licenses: false
 
     - name: gradlew build
+      env:
+        SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: chmod u+x ./gradlew && ./gradlew app:assembleRelease
 
@@ -32,6 +44,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         cd app
+        rm -rf keystore
         rm build/outputs/apk/release/output-metadata.json
         rm -rf build/outputs/apk/release/baselineProfiles
 
