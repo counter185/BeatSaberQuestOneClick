@@ -1,0 +1,43 @@
+name: Android build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull-request:
+    branches: [ "main" ]
+
+jobs:
+  build-android-onearch:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        log-accepted-android-sdk-licenses: false
+
+    - name: gradlew build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: chmod u+x ./gradlew && ./gradlew app:assembleRelease
+
+    - name: clean up
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        cd app
+        rm build/outputs/apk/release/output-metadata.json
+        rm -rf build/outputs/apk/release/baselineProfiles
+
+    - name: Push build artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: bsquestoneclick-build
+        path: |
+          app/build/outputs/apk/release
